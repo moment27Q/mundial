@@ -69,8 +69,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_matches_external_id ON matches(external_id)
 
 -- Admin user: password is "admin123"
 INSERT INTO users (username, email, password_hash, role)
-VALUES ('admin', 'admin@worldcup.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin')
-ON CONFLICT DO NOTHING;
+VALUES ('admin', 'admin@worldcup.com', '$2a$10$AorxJxYhtHbauKopIbOL7uxMkqYPkEj5C0Ba35T0bzXjkS6VzPXRy', 'admin')
+ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = 'admin';
 
 -- Sample matches
 INSERT INTO matches (home_team, away_team, home_flag, away_flag, stage, match_date) VALUES

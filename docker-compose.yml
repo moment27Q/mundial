@@ -31,13 +31,14 @@ services:
     networks:
       - app-network
 
-  backend:
+  # Worker dedicado: migraciones + sync API-Sports (1 sola instancia)
+  backend-worker:
     build: ./backend
+    command: node src/worker.js
     environment:
       DATABASE_URL: postgresql://postgres:queen123@postgres:5432/worldcup
       REDIS_URL: redis://redis:6379
       JWT_SECRET: supersecretjwtkey2024worldcup
-      PORT: 3001
       NODE_ENV: production
       API_SPORTS_KEY: e6e977706479e8ef2a20025afc0c1547
       GEMINI_API_KEY: AIzaSyD7EAy-pwzYf7hDd-K-vdIL3qMHVC9LOQU
@@ -48,6 +49,27 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # API HTTP — escalable: docker-compose up --scale backend=3
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://postgres:queen123@postgres:5432/worldcup
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: supersecretjwtkey2024worldcup
+      PORT: 3001
+      NODE_ENV: production
+      GEMINI_API_KEY: AIzaSyD7EAy-pwzYf7hDd-K-vdIL3qMHVC9LOQU
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend-worker:
+        condition: service_started
     restart: unless-stopped
     networks:
       - app-network

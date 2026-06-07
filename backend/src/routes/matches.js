@@ -40,6 +40,59 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
+router.get('/:id/trends', authMiddleware, async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const topRes = await pool.query(`
+      SELECT home_score, away_score, COUNT(*) AS cnt
+      FROM predictions
+      WHERE match_id = $1
+      GROUP BY home_score, away_score
+      ORDER BY cnt DESC
+      LIMIT 6
+    `, [id]);
+
+    const recentRes = await pool.query(`
+      SELECT u.username, p.home_score, p.away_score, p.created_at
+      FROM predictions p
+      JOIN users u ON p.user_id = u.id
+      WHERE p.match_id = $1
+      ORDER BY p.created_at DESC
+      LIMIT 6
+    `, [id]);
+
+    const total = topRes.rows.reduce((s, r) => s + parseInt(r.cnt), 0);
+
+    const trends = topRes.rows.map(r => ({
+      score: `${r.home_score}-${r.away_score}`,
+      home: r.home_score,
+      away: r.away_score,
+      count: parseInt(r.cnt),
+      pct: total > 0 ? Math.round((parseInt(r.cnt) / total) * 100) : 0,
+    }));
+
+    // winner tendency
+    let homeWins = 0, draws = 0, awayWins = 0;
+    topRes.rows.forEach(r => {
+      const c = parseInt(r.cnt);
+      if (r.home_score > r.away_score) homeWins += c;
+      else if (r.home_score === r.away_score) draws += c;
+      else awayWins += c;
+    });
+
+    res.json({
+      trends,
+      total,
+      winner: { home: homeWins, draw: draws, away: awayWins },
+      recent: recentRes.rows,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM matches WHERE id = $1', [req.params.id]);
