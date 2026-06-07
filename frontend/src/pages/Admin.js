@@ -18,6 +18,9 @@ export default function Admin() {
   const [message, setMessage] = useState('');
   const [tab, setTab] = useState('matches');
   const [users, setUsers] = useState([]);
+  const [showSync, setShowSync] = useState(false);
+  const [syncForm, setSyncForm] = useState({ league: 1, season: 2026 });
+  const [syncing, setSyncing] = useState(false);
 
   async function loadMatches() {
     const res = await api.get('/admin/matches');
@@ -87,6 +90,32 @@ export default function Admin() {
     }
   }
 
+  async function handleSyncMatches() {
+    setSyncing(true);
+    try {
+      const res = await api.post('/admin/sync-matches', syncForm);
+      notify(res.data.message);
+      loadMatches();
+    } catch (err) {
+      notify('Error: ' + (err.response?.data?.error || 'Error al sincronizar'));
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleSyncLive() {
+    setSyncing(true);
+    try {
+      const res = await api.post('/admin/sync-live', { league: syncForm.league });
+      notify(res.data.message);
+      loadMatches();
+    } catch (err) {
+      notify('Error: ' + (err.response?.data?.error || 'Error al actualizar'));
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   async function handleScore(matchId) {
     try {
       const res = await api.post(`/admin/matches/${matchId}/score`);
@@ -112,11 +141,51 @@ export default function Admin() {
 
       {tab === 'matches' && (
         <>
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button className="btn btn-primary" onClick={() => setShowCreate(!showCreate)}>
               {showCreate ? 'Cancelar' : '+ Nuevo partido'}
             </button>
+            <button className="btn btn-secondary" onClick={() => setShowSync(s => !s)}>
+              🔄 Sincronizar API-Sports
+            </button>
           </div>
+
+          {showSync && (
+            <div className="card" style={{ marginBottom: 20, background: '#f0f7ff', border: '1px solid #c3dafe' }}>
+              <h3 style={{ fontWeight: 700, marginBottom: 12 }}>🌐 Sincronizar con API-Sports</h3>
+              <div className="form-row" style={{ marginBottom: 12 }}>
+                <div className="form-group">
+                  <label>Liga (ID)</label>
+                  <input
+                    type="number"
+                    value={syncForm.league}
+                    onChange={e => setSyncForm(f => ({ ...f, league: Number(e.target.value) }))}
+                    style={{ width: 120 }}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Temporada</label>
+                  <input
+                    type="number"
+                    value={syncForm.season}
+                    onChange={e => setSyncForm(f => ({ ...f, season: Number(e.target.value) }))}
+                    style={{ width: 120 }}
+                  />
+                </div>
+              </div>
+              <p style={{ fontSize: '0.82rem', color: '#555', marginBottom: 12 }}>
+                Liga 1 = FIFA World Cup · Liga 2 = Champions League · etc. Temporada = año (ej: 2026)
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button className="btn btn-primary" onClick={handleSyncMatches} disabled={syncing}>
+                  {syncing ? '⏳ Sincronizando...' : '🔄 Importar todos los partidos'}
+                </button>
+                <button className="btn btn-gold" onClick={handleSyncLive} disabled={syncing}>
+                  {syncing ? '⏳ Actualizando...' : '⚡ Actualizar en vivo ahora'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {showCreate && (
             <div className="card" style={{ marginBottom: 20 }}>

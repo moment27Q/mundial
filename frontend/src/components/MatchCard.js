@@ -27,6 +27,24 @@ export default function MatchCard({ match, prediction: initialPred, onPredicted 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [analysis, setAnalysis] = useState('');
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [showAI, setShowAI] = useState(false);
+
+  async function fetchAnalysis() {
+    if (analysis) { setShowAI(s => !s); return; }
+    setLoadingAI(true);
+    try {
+      const res = await api.get(`/matches/${match.id}/analysis`);
+      setAnalysis(res.data.analysis);
+      setShowAI(true);
+    } catch {
+      setAnalysis('No se pudo cargar el análisis. Intentá de nuevo.');
+      setShowAI(true);
+    } finally {
+      setLoadingAI(false);
+    }
+  }
 
   const now = new Date();
   const matchDate = new Date(match.match_date);
@@ -132,6 +150,35 @@ export default function MatchCard({ match, prediction: initialPred, onPredicted 
       )}
 
       {error && <div className="alert alert-error mt-8" style={{ marginTop: 8 }}>{error}</div>}
+
+      <div style={{ marginTop: 10, textAlign: 'center' }}>
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={fetchAnalysis}
+          disabled={loadingAI}
+          style={{ fontSize: '0.8rem' }}
+        >
+          {loadingAI ? '⏳ Analizando...' : showAI ? '🤖 Ocultar análisis' : '🤖 Análisis IA'}
+        </button>
+      </div>
+
+      {showAI && analysis && (
+        <div style={{
+          marginTop: 10,
+          padding: '12px 14px',
+          background: 'linear-gradient(135deg, #eef2ff 0%, #f0f7ff 100%)',
+          borderRadius: 8,
+          fontSize: '0.82rem',
+          lineHeight: 1.6,
+          color: '#1e1b4b',
+          border: '1px solid #c7d2fe',
+        }}>
+          <div style={{ fontWeight: 700, marginBottom: 6, color: '#4338ca', fontSize: '0.85rem' }}>
+            🤖 Análisis Gemini IA
+          </div>
+          {analysis}
+        </div>
+      )}
     </div>
   );
 }

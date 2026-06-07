@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import heroBg from '../imagen/mundial.png';
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -17,7 +18,7 @@ export default function Login() {
     setError('');
     try {
       await login(form.email, form.password);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al iniciar sesión');
     } finally {
@@ -26,7 +27,7 @@ export default function Login() {
   }
 
   return (
-    <div className="auth-wrapper">
+    <div className="auth-wrapper" style={{ backgroundImage: `url(${heroBg})` }}>
       <div className="auth-card">
         <div style={{ textAlign: 'center', fontSize: '3rem', marginBottom: 8 }}>⚽</div>
         <h1 className="auth-title">Mundial Predictor</h1>

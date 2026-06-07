@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS room_members (
 -- Matches
 CREATE TABLE IF NOT EXISTS matches (
   id SERIAL PRIMARY KEY,
+  external_id INTEGER,
   home_team VARCHAR(50) NOT NULL,
   away_team VARCHAR(50) NOT NULL,
   home_flag VARCHAR(20) DEFAULT '',
@@ -64,6 +65,7 @@ CREATE INDEX IF NOT EXISTS idx_predictions_match ON predictions(match_id);
 CREATE INDEX IF NOT EXISTS idx_matches_date ON matches(match_date);
 CREATE INDEX IF NOT EXISTS idx_matches_status ON matches(status);
 CREATE INDEX IF NOT EXISTS idx_room_members_user ON room_members(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_matches_external_id ON matches(external_id) WHERE external_id IS NOT NULL;
 
 -- Admin user: password is "admin123"
 INSERT INTO users (username, email, password_hash, role)

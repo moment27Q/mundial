@@ -17,12 +17,17 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      api.get('/matches', { params: { status: 'upcoming' } }),
+      api.get('/matches', { params: { status: 'live,upcoming' } }),
       api.get('/leaderboard'),
       api.get('/predictions/my'),
       refreshUser(),
     ]).then(([m, lb, p]) => {
-      setMatches(m.data.slice(0, 5));
+      const all = m.data;
+      // Mostrar en vivo primero, luego próximos ordenados por fecha
+      const live     = all.filter(x => x.status === 'live');
+      const upcoming = all.filter(x => x.status === 'upcoming')
+                          .sort((a, b) => new Date(a.match_date) - new Date(b.match_date));
+      setMatches([...live, ...upcoming].slice(0, 5));
       setLeaderboard(lb.data);
       setPredictions(p.data);
     }).finally(() => setLoading(false));

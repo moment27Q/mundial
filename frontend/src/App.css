@@ -13,36 +13,62 @@ body {
 
 /* --- Navbar --- */
 .navbar {
-  background: linear-gradient(135deg, #1a6b00 0%, #2d9e00 100%);
+  background: #0a1628;
   color: #fff;
-  padding: 0 24px;
+  padding: 0 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 60px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  height: 58px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
   position: sticky;
   top: 0;
   z-index: 100;
 }
-.navbar-brand { font-size: 1.2rem; font-weight: 800; text-decoration: none; color: #fff; display: flex; align-items: center; gap: 8px; }
-.navbar-links { display: flex; align-items: center; gap: 4px; }
-.navbar-links a, .navbar-btn {
-  color: rgba(255,255,255,0.9);
+.navbar-brand {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-decoration: none;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.navbar-links { display: flex; align-items: center; gap: 2px; }
+.navbar-links a {
+  color: rgba(255,255,255,0.55);
   text-decoration: none;
   padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.9rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
   font-weight: 500;
-  transition: background 0.2s;
-  border: none;
+  transition: color 0.15s, background 0.15s;
+}
+.navbar-links a:hover { color: #fff; background: rgba(255,255,255,0.07); }
+.navbar-links a.active { color: #fff; background: rgba(255,255,255,0.1); }
+.navbar-user { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: rgba(255,255,255,0.7); }
+.navbar-username { font-weight: 600; color: #fff; }
+.badge-pts {
+  background: rgba(251,191,36,0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251,191,36,0.3);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+.navbar-btn {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.15);
   cursor: pointer;
   background: transparent;
+  transition: all 0.15s;
 }
-.navbar-links a:hover, .navbar-btn:hover { background: rgba(255,255,255,0.15); }
-.navbar-links a.active { background: rgba(255,255,255,0.2); }
-.navbar-user { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
-.badge-pts { background: #ffd700; color: #333; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 0.8rem; }
+.navbar-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.06); }
 
 /* --- Cards --- */
 .card {
@@ -106,16 +132,27 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1a6b00 0%, #2d9e00 40%, #145200 100%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   padding: 20px;
+  position: relative;
+}
+.auth-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
 }
 .auth-card {
+  position: relative;
+  z-index: 1;
   background: #fff;
   border-radius: 16px;
   padding: 40px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
 }
 .auth-title { font-size: 1.6rem; font-weight: 800; text-align: center; margin-bottom: 8px; }
 .auth-subtitle { text-align: center; color: #666; margin-bottom: 28px; font-size: 0.9rem; }

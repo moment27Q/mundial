@@ -3,6 +3,7 @@ const pool = require('../config/db');
 const redis = require('../config/redis');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const { calculateBasePoints, calculateStreakBonus } = require('../services/scoring');
+const { fetchFixtures, fetchLiveFixtures, fixtureToMatch } = require('../services/apiSports');
 
 const router = express.Router();
 router.use(authMiddleware, adminMiddleware);
@@ -148,6 +149,91 @@ router.post('/matches/:id/score', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- API-SPORTS SYNC ---
+
+async function upsertFixture(client, match) {
+  return client.query(`
+    INSERT INTO matches (external_id, home_team, away_team, home_flag, away_flag, stage, match_date, home_score, away_score, status)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    ON CONFLICT (external_id) WHERE external_id IS NOT NULL
+    DO UPDATE SET
+      home_team  = EXCLUDED.home_team,
+      away_team  = EXCLUDED.away_team,
+      home_flag  = EXCLUDED.home_flag,
+      away_flag  = EXCLUDED.away_flag,
+      stage      = EXCLUDED.stage,
+      match_date = EXCLUDED.match_date,
+      home_score = EXCLUDED.home_score,
+      away_score = EXCLUDED.away_score,
+      status     = EXCLUDED.status
+    RETURNING (xmax = 0) AS inserted
+  `, [match.external_id, match.home_team, match.away_team, match.home_flag, match.away_flag,
+      match.stage, match.match_date, match.home_score, match.away_score, match.status]);
+}
+
+router.post('/sync-matches', async (req, res) => {
+  try {
+    const { league = 1, season = 2026 } = req.body;
+    const fixtures = await fetchFixtures({ league, season });
+
+    if (!fixtures.length)
+      return res.json({ message: 'No se encontraron partidos en la API. Verificá tu plan o cargalos manualmente.', created: 0, updated: 0 });
+
+    let created = 0, updated = 0;
+    const client = await pool.connect();
+    try {
+      for (const f of fixtures) {
+        const match = fixtureToMatch(f);
+        const result = await upsertFixture(client, match);
+        result.rows[0]?.inserted ? created++ : updated++;
+      }
+    } finally {
+      client.release();
+    }
+
+    res.json({ message: `Sincronizados ${fixtures.length} partidos: ${created} nuevos, ${updated} actualizados`, created, updated });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'Error al sincronizar' });
+  }
+});
+
+router.post('/sync-live', async (req, res) => {
+  try {
+    const { league = 1 } = req.body;
+    const fixtures = await fetchLiveFixtures({ league });
+
+    if (!fixtures.length)
+      return res.json({ message: 'No hay partidos en vivo ahora', updated: 0 });
+
+    let updated = 0;
+    const client = await pool.connect();
+    try {
+      for (const f of fixtures) {
+        const match = fixtureToMatch(f);
+        const result = await client.query(
+          'UPDATE matches SET home_score=$1, away_score=$2, status=$3 WHERE external_id=$4 RETURNING id',
+          [match.home_score, match.away_score, match.status, match.external_id]
+        );
+        if (result.rows.length) updated++;
+      }
+    } finally {
+      client.release();
+    }
+
+    if (updated > 0) {
+      await redis.del('leaderboard:global');
+      const roomKeys = await redis.keys('leaderboard:room:*');
+      if (roomKeys.length) await redis.del(...roomKeys);
+    }
+
+    res.json({ message: `Actualizados ${updated} partidos en vivo`, updated });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'Error al actualizar en vivo' });
   }
 });
 

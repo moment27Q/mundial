@@ -39,6 +39,10 @@ services:
       JWT_SECRET: supersecretjwtkey2024worldcup
       PORT: 3001
       NODE_ENV: production
+      API_SPORTS_KEY: e6e977706479e8ef2a20025afc0c1547
+      GEMINI_API_KEY: AIzaSyD7EAy-pwzYf7hDd-K-vdIL3qMHVC9LOQU
+      API_SPORTS_LEAGUE: 1
+      API_SPORTS_SEASON: 2026
     depends_on:
       postgres:
         condition: service_healthy

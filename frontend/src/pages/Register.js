@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import heroBg from '../imagen/mundial.png';
 
 export default function Register() {
   const [form, setForm] = useState({ username: '', email: '', password: '' });
@@ -17,7 +18,7 @@ export default function Register() {
     setError('');
     try {
       await register(form.username, form.email, form.password);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrarse');
     } finally {
@@ -26,7 +27,7 @@ export default function Register() {
   }
 
   return (
-    <div className="auth-wrapper">
+    <div className="auth-wrapper" style={{ backgroundImage: `url(${heroBg})` }}>
       <div className="auth-card">
         <div style={{ textAlign: 'center', fontSize: '3rem', marginBottom: 8 }}>⚽</div>
         <h1 className="auth-title">Crear cuenta</h1>

@@ -13,9 +13,9 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <NavLink to="/" className="navbar-brand">⚽ Mundial Predictor</NavLink>
+      <NavLink to="/dashboard" className="navbar-brand">Mundial Predictor</NavLink>
       <div className="navbar-links">
-        <NavLink to="/" end className={({ isActive }) => isActive ? 'active' : ''}>Dashboard</NavLink>
+        <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}>Dashboard</NavLink>
         <NavLink to="/predictions" className={({ isActive }) => isActive ? 'active' : ''}>Predicciones</NavLink>
         <NavLink to="/rooms" className={({ isActive }) => isActive ? 'active' : ''}>Salas</NavLink>
         {user?.role === 'admin' && (
@@ -23,8 +23,8 @@ export default function Navbar() {
         )}
       </div>
       <div className="navbar-user">
-        <span>{user?.username}</span>
-        <span className="badge-pts">⭐ {user?.total_points ?? 0} pts</span>
+        <span className="navbar-username">{user?.username}</span>
+        <span className="badge-pts">{user?.total_points ?? 0} pts</span>
         <button className="navbar-btn" onClick={handleLogout}>Salir</button>
       </div>
     </nav>
