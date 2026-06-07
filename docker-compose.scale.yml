@@ -1,0 +1,13 @@
+version: '3.8'
+
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.scale.yml up --scale backend=3
+# Scales the backend to 3 instances; Nginx distributes load with least_conn
+
+services:
+  backend:
+    environment:
+      DATABASE_URL: postgresql://wcuser:wcpassword@postgres:5432/worldcup
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: supersecretjwtkey2024worldcup
+      PORT: 3001
+      NODE_ENV: production
