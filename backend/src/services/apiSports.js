@@ -130,19 +130,23 @@ async function fetchLiveFixtures({ league = 1 } = {}) {
 }
 
 function fixtureToMatch(f) {
-  const status = mapStatus(f.fixture.status.short);
-  const hasScore = status === 'finished';
+  const short  = f.fixture.status.short;
+  const status = mapStatus(short);
+  const isLive = status === 'live';
+  const isDone = status === 'finished';
   return {
-    external_id: f.fixture.id,
-    home_team:   f.teams.home.name,
-    away_team:   f.teams.away.name,
-    home_flag:   FLAGS[f.teams.home.name] || '',
-    away_flag:   FLAGS[f.teams.away.name] || '',
-    stage:       mapStage(f.league.round, f.league.group),
-    match_date:  new Date(f.fixture.date).toISOString(),
-    home_score:  hasScore ? f.goals.home : null,
-    away_score:  hasScore ? f.goals.away : null,
+    external_id:   f.fixture.id,
+    home_team:     f.teams.home.name,
+    away_team:     f.teams.away.name,
+    home_flag:     FLAGS[f.teams.home.name] || '',
+    away_flag:     FLAGS[f.teams.away.name] || '',
+    stage:         mapStage(f.league.round, f.league.group),
+    match_date:    new Date(f.fixture.date).toISOString(),
+    home_score:    (isLive || isDone) ? (f.goals.home ?? null) : null,
+    away_score:    (isLive || isDone) ? (f.goals.away ?? null) : null,
     status,
+    elapsed:       f.fixture.status.elapsed ?? null,
+    status_short:  short,
   };
 }
 

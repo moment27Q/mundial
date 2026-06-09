@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import './MatchModal.css';
 
@@ -26,30 +26,67 @@ function ptsBadge(pred) {
   return { cls: 'none', label: '❌ Sin puntos' };
 }
 
-export default function MatchModal({ match, prediction: initPred, onClose, onPredicted }) {
+function liveLabel(statusShort, elapsed) {
+  if (!statusShort) return { text: 'EN VIVO', sub: null };
+  if (statusShort === 'HT')  return { text: 'ET', sub: 'Descanso' };
+  if (statusShort === 'ET')  return { text: 'PRÓRROGA', sub: elapsed ? `${elapsed}'` : null };
+  if (statusShort === 'P')   return { text: 'PENALES', sub: null };
+  if (statusShort === 'BT')  return { text: 'DESC. EXTRA', sub: null };
+  if (statusShort === '1H')  return { text: `${elapsed}'`, sub: '1er Tiempo' };
+  if (statusShort === '2H')  return { text: `${elapsed}'`, sub: '2do Tiempo' };
+  if (elapsed != null)       return { text: `${elapsed}'`, sub: null };
+  return { text: 'EN VIVO', sub: null };
+}
+
+export default function MatchModal({ match: initMatch, prediction: initPred, onClose, onPredicted }) {
+  const [match, setMatch]       = useState(initMatch);
   const [predHome, setPredHome] = useState(initPred?.home_score ?? '');
   const [predAway, setPredAway] = useState(initPred?.away_score ?? '');
   const [saving, setSaving]     = useState(false);
   const [saved, setSaved]       = useState(false);
   const [error, setError]       = useState('');
   const [trends, setTrends]     = useState(null);
+  const refreshRef              = useRef(null);
 
   const now        = new Date();
   const matchDate  = new Date(match.match_date);
   const canPredict = match.status === 'upcoming' && (matchDate - now) / 60000 > 10;
 
+  async function loadTrends() {
+    try {
+      const r = await api.get(`/matches/${match.id}/trends`);
+      setTrends(r.data);
+    } catch {}
+  }
+
+  async function refreshMatch() {
+    try {
+      const r = await api.get(`/matches/${match.id}`);
+      setMatch(r.data);
+    } catch {}
+  }
+
   useEffect(() => {
     const handler = e => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
     document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', handler); document.body.style.overflow = ''; };
+    return () => {
+      document.removeEventListener('keydown', handler);
+      document.body.style.overflow = '';
+      clearInterval(refreshRef.current);
+    };
   }, [onClose]);
 
   useEffect(() => {
-    api.get(`/matches/${match.id}/trends`)
-      .then(r => setTrends(r.data))
-      .catch(() => {});
-  }, [match.id]);
+    loadTrends();
+    if (match.status === 'live') {
+      refreshRef.current = setInterval(() => {
+        refreshMatch();
+        loadTrends();
+      }, 30_000);
+    }
+    return () => clearInterval(refreshRef.current);
+  }, [match.id, match.status]);
 
   async function handlePredict(e) {
     e.preventDefault();
@@ -76,12 +113,14 @@ export default function MatchModal({ match, prediction: initPred, onClose, onPre
     setPredHome(h); setPredAway(a);
   }
 
-  const statusLabel = match.status === 'live' ? 'EN VIVO' : match.status === 'finished' ? 'Finalizado' : 'Próximo';
   const maxTrendPct = trends?.trends?.[0]?.pct || 1;
   const total       = trends?.total || 0;
   const winner      = trends?.winner || { home: 0, draw: 0, away: 0 };
   const winTotal    = winner.home + winner.draw + winner.away || 1;
   const badge       = ptsBadge(initPred);
+  const live        = liveLabel(match.status_short, match.elapsed);
+  const isLive      = match.status === 'live';
+  const isDone      = match.status === 'finished';
 
   return (
     <div className="mmodal-overlay" onClick={onClose}>
@@ -92,7 +131,13 @@ export default function MatchModal({ match, prediction: initPred, onClose, onPre
           <button className="mmodal-close" onClick={onClose}>✕</button>
           <div className="mmodal-hero-top">
             <span className="mmodal-stage-chip">{match.stage}</span>
-            <span className={`mmodal-status-chip ${match.status}`}>{statusLabel}</span>
+            {isLive && (
+              <span className="mmodal-status-chip live">
+                <span className="mmodal-live-dot" /> EN VIVO
+              </span>
+            )}
+            {isDone && <span className="mmodal-status-chip finished">Finalizado</span>}
+            {!isLive && !isDone && <span className="mmodal-status-chip upcoming">Próximo</span>}
           </div>
 
           <div className="mmodal-teams">
@@ -100,20 +145,33 @@ export default function MatchModal({ match, prediction: initPred, onClose, onPre
               <span className="mmodal-team-flag">{match.home_flag}</span>
               <span className="mmodal-team-name">{match.home_team}</span>
             </div>
+
             <div className="mmodal-center">
-              {match.status === 'finished' ? (
-                <span className="mmodal-score">{match.home_score} : {match.away_score}</span>
+              {(isLive || isDone) && match.home_score != null ? (
+                <div className="mmodal-scoreboard">
+                  <span className="mmodal-score">{match.home_score} : {match.away_score}</span>
+                  {isLive && (
+                    <div className="mmodal-clock">
+                      <span className="mmodal-clock-dot" />
+                      <span className="mmodal-clock-time">{live.text}</span>
+                      {live.sub && <span className="mmodal-clock-sub">{live.sub}</span>}
+                    </div>
+                  )}
+                  {isDone && <span className="mmodal-ft">Tiempo reglamentario</span>}
+                </div>
               ) : (
-                <span className="mmodal-vs">VS</span>
+                <div className="mmodal-scoreboard">
+                  <span className="mmodal-vs">VS</span>
+                  <span className="mmodal-kickoff">{formatDate(match.match_date)}</span>
+                </div>
               )}
             </div>
+
             <div className="mmodal-team">
               <span className="mmodal-team-flag">{match.away_flag}</span>
               <span className="mmodal-team-name">{match.away_team}</span>
             </div>
           </div>
-
-          <div className="mmodal-date">{formatDate(match.match_date)}</div>
         </div>
 
         {/* BODY */}

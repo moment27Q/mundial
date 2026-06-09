@@ -41,6 +41,8 @@ CREATE TABLE IF NOT EXISTS matches (
   home_score INTEGER,
   away_score INTEGER,
   status VARCHAR(20) DEFAULT 'upcoming',
+  elapsed INTEGER DEFAULT NULL,
+  status_short VARCHAR(10) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -72,14 +74,24 @@ INSERT INTO users (username, email, password_hash, role)
 VALUES ('admin', 'admin@worldcup.com', '$2a$10$AorxJxYhtHbauKopIbOL7uxMkqYPkEj5C0Ba35T0bzXjkS6VzPXRy', 'admin')
 ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = 'admin';
 
--- Sample matches
+-- FIFA World Cup 2026 — fixtures (replaced by API sync when available)
 INSERT INTO matches (home_team, away_team, home_flag, away_flag, stage, match_date) VALUES
-('Argentina', 'Brasil',       '🇦🇷', '🇧🇷', 'Grupo A', NOW() + INTERVAL '2 days'),
-('Francia',   'Alemania',     '🇫🇷', '🇩🇪', 'Grupo B', NOW() + INTERVAL '2 days 3 hours'),
-('España',    'Portugal',     '🇪🇸', '🇵🇹', 'Grupo C', NOW() + INTERVAL '3 days'),
-('Inglaterra','Italia',       '🏴󠁧󠁢󠁥󠁮󠁧󠁿', '🇮🇹', 'Grupo D', NOW() + INTERVAL '3 days 3 hours'),
-('México',    'Uruguay',      '🇲🇽', '🇺🇾', 'Grupo E', NOW() + INTERVAL '4 days'),
-('Holanda',   'Bélgica',      '🇳🇱', '🇧🇪', 'Grupo F', NOW() + INTERVAL '4 days 3 hours'),
-('Croacia',   'Marruecos',    '🇭🇷', '🇲🇦', 'Grupo G', NOW() + INTERVAL '5 days'),
-('Japón',     'Corea del Sur','🇯🇵', '🇰🇷', 'Grupo H', NOW() + INTERVAL '5 days 3 hours')
+-- Jornada 1 (11-13 Jun)
+('México',         'xGanador Q1',    '🇲🇽','🏳️','Grupo A','2026-06-11 21:00:00'),
+('Estados Unidos', 'Serbia',         '🇺🇸','🇷🇸','Grupo B','2026-06-12 18:00:00'),
+('Uruguay',        'Angola',         '🇺🇾','🇦🇴','Grupo C','2026-06-12 21:00:00'),
+('Brasil',         'Japón',          '🇧🇷','🇯🇵','Grupo D','2026-06-13 01:00:00'),
+('Argentina',      'Islandia',       '🇦🇷','🇮🇸','Grupo E','2026-06-13 18:00:00'),
+('Francia',        'Guinea',         '🇫🇷','🇬🇳','Grupo F','2026-06-13 21:00:00'),
+('España',         'Marruecos',      '🇪🇸','🇲🇦','Grupo G','2026-06-14 01:00:00'),
+('Alemania',       'Arabia Saudita', '🇩🇪','🇸🇦','Grupo H','2026-06-14 18:00:00'),
+-- Jornada 2 (14-16 Jun)
+('Canadá',         'xGanador Q2',    '🇨🇦','🏳️','Grupo A','2026-06-14 21:00:00'),
+('Portugal',       'Zimbabue',       '🇵🇹','🇿🇼','Grupo B','2026-06-15 18:00:00'),
+('Países Bajos',   'Senegal',        '🇳🇱','🇸🇳','Grupo C','2026-06-15 21:00:00'),
+('Bélgica',        'Australia',      '🇧🇪','🇦🇺','Grupo D','2026-06-16 01:00:00'),
+('Inglaterra',     'Nigeria',        '🏴󠁧󠁢󠁥󠁮󠁧󠁿','🇳🇬','Grupo E','2026-06-16 18:00:00'),
+('Italia',         'Ecuador',        '🇮🇹','🇪🇨','Grupo F','2026-06-16 21:00:00'),
+('Croacia',        'Chile',          '🇭🇷','🇨🇱','Grupo G','2026-06-17 01:00:00'),
+('Colombia',       'Costa Rica',     '🇨🇴','🇨🇷','Grupo H','2026-06-17 18:00:00')
 ON CONFLICT DO NOTHING;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
@@ -11,6 +11,16 @@ function formatDate(d) {
     weekday: 'short', day: 'numeric', month: 'short',
     hour: '2-digit', minute: '2-digit',
   });
+}
+
+function liveTime(statusShort, elapsed) {
+  if (!statusShort) return 'EN VIVO';
+  if (statusShort === 'HT')  return 'ET';
+  if (statusShort === 'ET')  return 'PRORR.';
+  if (statusShort === 'P')   return 'PENALT.';
+  if (statusShort === 'BT')  return 'DESCANSO';
+  if (elapsed != null)       return `${elapsed}'`;
+  return 'EN VIVO';
 }
 
 const SCORING_RULES = [
@@ -28,6 +38,7 @@ export default function Dashboard() {
   const [predMap, setPredMap]         = useState({});
   const [loading, setLoading]         = useState(true);
   const [selected, setSelected]       = useState(null);
+  const refreshRef = useRef(null);
 
   async function load() {
     const [m, lb, p] = await Promise.all([
@@ -35,29 +46,36 @@ export default function Dashboard() {
       api.get('/leaderboard'),
       api.get('/predictions/my'),
     ]);
-    const all     = m.data;
-    const live    = all.filter(x => x.status === 'live');
+    const all      = m.data;
+    const live     = all.filter(x => x.status === 'live');
     const upcoming = all.filter(x => x.status === 'upcoming')
                        .sort((a, b) => new Date(a.match_date) - new Date(b.match_date));
-    setMatches([...live, ...upcoming].slice(0, 6));
+    const list = [...live, ...upcoming].slice(0, 6);
+    setMatches(list);
     setLeaderboard(lb.data);
     const map = {};
     p.data.forEach(pred => { map[pred.match_id] = pred; });
     setPredMap(map);
+    // Auto-refresh cada 30s si hay partidos en vivo
+    clearInterval(refreshRef.current);
+    if (live.length > 0) {
+      refreshRef.current = setInterval(load, 30_000);
+    }
   }
 
   useEffect(() => {
     Promise.all([load(), refreshUser()]).finally(() => setLoading(false));
+    return () => clearInterval(refreshRef.current);
   }, []);
 
   if (loading) return <div className="loading">Cargando...</div>;
 
-  const predictions  = Object.values(predMap);
-  const total        = predictions.length;
-  const scored       = predictions.filter(p => p.scored);
-  const correct      = scored.filter(p => p.base_points > 0);
-  const accuracy     = scored.length > 0 ? Math.round((correct.length / scored.length) * 100) : 0;
-  const myRank       = leaderboard.find(e => e.id === user?.id)?.rank;
+  const predictions = Object.values(predMap);
+  const total       = predictions.length;
+  const scored      = predictions.filter(p => p.scored);
+  const correct     = scored.filter(p => p.base_points > 0);
+  const accuracy    = scored.length > 0 ? Math.round((correct.length / scored.length) * 100) : 0;
+  const myRank      = leaderboard.find(e => e.id === user?.id)?.rank;
 
   return (
     <div className="dash">
@@ -96,7 +114,7 @@ export default function Dashboard() {
 
         <div className="dash-section">
           <div className="dash-section-head">
-            <h2>Próximos partidos</h2>
+            <h2>Partidos</h2>
             <Link to="/predictions">Ver todos →</Link>
           </div>
           {matches.length === 0 ? (
@@ -120,10 +138,16 @@ export default function Dashboard() {
                     <span className="dash-match-stage">{m.stage}</span>
                   </div>
                 </div>
+
                 {m.status === 'live' ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span className="dash-live-dot" />
-                    <span className="dash-live-label">EN VIVO</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {m.home_score != null && (
+                      <span className="dash-match-score">{m.home_score} — {m.away_score}</span>
+                    )}
+                    <div className="dash-live-badge">
+                      <span className="dash-live-dot" />
+                      <span className="dash-live-time">{liveTime(m.status_short, m.elapsed)}</span>
+                    </div>
                   </div>
                 ) : (
                   <span style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>›</span>

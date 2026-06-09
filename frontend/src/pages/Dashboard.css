@@ -155,23 +155,41 @@
   border-radius: 4px;
 }
 
+.dash-live-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 20px;
+  padding: 3px 10px;
+  flex-shrink: 0;
+}
 .dash-live-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #ef4444;
-  flex-shrink: 0;
-  animation: pulse-dot 1.4s ease-in-out infinite;
+  animation: pulse-dot 1s ease-in-out infinite;
 }
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.7); }
+  50% { opacity: 0.3; transform: scale(0.6); }
 }
-.dash-live-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #ef4444;
-  letter-spacing: 0.5px;
+.dash-live-time {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #dc2626;
+  font-variant-numeric: tabular-nums;
+}
+.dash-match-score {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #0f172a;
+  background: #f1f5f9;
+  padding: 3px 10px;
+  border-radius: 6px;
+  flex-shrink: 0;
 }
 
 /* Empty state */
